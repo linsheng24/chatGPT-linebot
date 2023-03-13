@@ -9,8 +9,9 @@ const renderRedis = new Redis(REDIS_URL);
 
 async function getChatReply(logs = []) {
   let data = JSON.stringify({
-    "model": "gpt-3.5-turbo",
-    "messages": [
+    model: "gpt-3.5-turbo",
+    max_tokens: 300,
+    messages: [
       ...logs,
     ],  
   });
