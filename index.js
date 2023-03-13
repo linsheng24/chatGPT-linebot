@@ -1,24 +1,37 @@
 const line = require("@line/bot-sdk");
 const express = require("express");
-const { Configuration, OpenAIApi } = require("openai");
+const axios = require("axios");
 require("dotenv").config();
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
-
 async function getChatReply(text = "") {
-  const completion = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: text,
-    max_tokens: 300,
-    temperature: 0.9,
-    top_p: 1,
-    frequency_penalty: 0,
-    presence_penalty: 0,
+  let data = JSON.stringify({
+    "model": "gpt-3.5-turbo",
+    "messages": [
+    { role: "system", content: 'test' },
+    { role: "assistant", content: "Hi. How can I help you today?" },
+    { role: "user", content: 'test' }],  
   });
-  return { type: "text", text: completion.data.choices[0].text.trim() };
+    
+  var config = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: 'https://api.openai.com/v1/chat/completions',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+    },
+    data: data
+  };
+  let completion = await axios(config)
+    .then(function (response) {
+      let data = response.data;
+      return data
+    })
+    .catch(function (error) {
+      console.log(error, 'error in calling chat completion');
+    });
+
+  return { type: "text", text: completion.choices[0].message.content.trim() };
 }
 
 // create LINE SDK config from env variables
@@ -47,6 +60,7 @@ async function handleEvent(event) {
   const echo = await getChatReply(event.message.text);
   return client.replyMessage(event.replyToken, echo);
 }
+getChatReply('你好');
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
